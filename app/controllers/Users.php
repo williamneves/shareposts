@@ -5,6 +5,7 @@ class Users extends Controller
   public function __construct()
   {
     // echo 'Users Class';
+    $this->userModel = $this->model('User');
   }
 
   // Register User
@@ -35,6 +36,11 @@ class Users extends Controller
       // Validate email
       if (empty($data['email'])) {
         $data['email_err'] = 'Please enter Email';
+      } else {
+        // Check if email exists
+        if ($this->userModel->findUserByEmail($data['email'])) {
+          $data['email_err'] = 'Email is already taken';
+        }
       }
       // Validate password
       if (empty($data['password'])) {
@@ -51,8 +57,18 @@ class Users extends Controller
 
       // Make sure errors are empty
       if (empty($data['name_err']) && empty($data['email_err'])  && empty($data['password_err']) && empty($data['confirm_password_err'])) {
-        // Validate
-        die('SUCCESS');
+        
+        // Hash password
+        $data['password'] = password_hash($data['password'], PASSWORD_BCRYPT);
+
+        // Register User
+        if($this->userModel->register($data)){
+          redirect('users/login');
+        }else{
+          die('Something went wrong');
+        }
+
+
       } else {
         // Load view with errors
         $this->view('users/register', $data);
